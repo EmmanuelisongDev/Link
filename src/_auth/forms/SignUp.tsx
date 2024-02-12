@@ -15,17 +15,20 @@ import {
   import { Input } from "@/components/ui/input"
   import Loader from "@/components/shared/Loader";
   import { Link } from "react-router-dom";
-import { createUserAccount } from "@/lib/appwrite/api";
 import { useToast } from "@/components/ui/use-toast";
+import {useCreateUserAccountMutation, useSignInAccount} from '@/lib/react-query/queriesAndMutations'
 
 
 
 
 export default function SignUp() {
-  const toast =  useToast()
+  const {toast} =  useToast()
 
 
-const isLoading = false
+const {mutateAsync:createNewAccount, isLoading:isCreatingUser} = useCreateUserAccountMutation()
+
+const {mutateAsync:signInAccount, isLoading:isSiginingIn } = useSignInAccount()
+
   const form = useForm<z.infer<typeof SignUpValidation >>({
     resolver: zodResolver(SignUpValidation ),
     defaultValues: {
@@ -40,13 +43,21 @@ const isLoading = false
    async function onSubmit(values: z.infer<typeof SignUpValidation>) {
     const newUser =  await createUserAccount(values)
     if(!newUser){
-      toast({
+      return  toast({
         title:'Sign Up Failed. Please try again.'
       })
-      return 
     }
 
-    // const session  = await signInAccount()
+    const session  = await signInAccount({
+      email:values.email,
+      password: values.password,
+    })
+
+    if(!session){
+      return toast({
+        title:'Sign in failed. Please try again.'
+      })
+    }
   }
 
 
@@ -70,7 +81,7 @@ const isLoading = false
                 <Input   type="text" className="shad-input" {...field} />
               </FormControl>
           
-              <FormMessage />
+              <FormMessage className=" text-red "/>
             </FormItem>
           )}
         />
@@ -84,7 +95,7 @@ const isLoading = false
                 <Input  type="text" className="shad-input" {...field} />
               </FormControl>
           
-              <FormMessage />
+              <FormMessage className=" text-red " />
             </FormItem>
           )}
         />
@@ -98,7 +109,7 @@ const isLoading = false
                 <Input  type="email" className="shad-input" {...field} />
               </FormControl>
           
-              <FormMessage />
+              <FormMessage  className=" text-red " />
             </FormItem>
           )}
         />
@@ -112,12 +123,12 @@ const isLoading = false
                 <Input   type="password" className="shad-input" {...field} />
               </FormControl>
           
-              <FormMessage />
+              <FormMessage className=" text-red " />
             </FormItem>
           )}
         />
         <Button type="submit" className="shad-button_primary">
-       {isLoading ? ( <div className="flex-center gap-2"><Loader/>Loading...</div>):'Sign Up'}
+       {isCreatingUser? ( <div className="flex-center gap-2"><Loader/>Loading...</div>):'Sign Up'}
           </Button>
           <p className="text-small-regular text-light-2 text-center mt-2" >
             Already have an account? <Link to='/sign-in' className="text-primary-500 text-small-semibold ml-1" >Log in</Link>
@@ -127,3 +138,11 @@ const isLoading = false
     </Form>
   )
 }
+
+
+
+
+// function userCreateUserAccountMutation() {
+//   throw new Error("Function not implemented.");
+// }
+
